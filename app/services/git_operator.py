@@ -100,3 +100,12 @@ def get_diff(local_path):
         return repo.git.diff()
     except Exception as e:
         return {"status": "error", "detail": str(e)}
+
+def get_file_content(repo_name, file_path):
+    try:
+        repo = user.get_repo(repo_name)
+        file = repo.get_contents(file_path)
+        content = file.decoded_content.decode("utf-8")
+        return {"status": "success", "filename": file_path, "content": content}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}

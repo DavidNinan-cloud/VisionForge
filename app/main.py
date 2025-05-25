@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from app.api import webhook
+from app.api import code_api
 
 app = FastAPI(
     title="Application Developer AI",
@@ -9,3 +10,4 @@ app = FastAPI(
 
 # Include the webhook router for GPT
 app.include_router(webhook.router, prefix="/api")
+app.include_router(code_api.router, prefix="/api")

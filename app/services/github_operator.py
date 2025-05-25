@@ -64,3 +64,77 @@ def validate_repo_url(repo_url, token=GITHUB_TOKEN):
         return response.status_code == 200
     except Exception:
         return False
+
+def commit_file_to_repo(repo_name, file_path, content, commit_message):
+    try:
+        repo = user.get_repo(repo_name)
+        existing = None
+        try:
+            existing = repo.get_contents(file_path)
+        except:
+            pass  # File doesn't exist yet
+
+        if existing:
+            repo.update_file(
+                path=file_path,
+                message=commit_message,
+                content=content,
+                sha=existing.sha
+            )
+        else:
+            repo.create_file(
+                path=file_path,
+                message=commit_message,
+                content=content
+            )
+        return {"status": "success", "file": file_path}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
+def summarize_repo(repo_name):
+    try:
+        repo = user.get_repo(repo_name)
+        files = repo.get_contents("")
+
+        summary = []
+        for file in files:
+            if file.type == "file":
+                summary.append(f"📄 {file.name}")
+            elif file.type == "dir":
+                summary.append(f"📁 {file.name}/ (folder)")
+
+        return {
+            "status": "success",
+            "repo": repo.full_name,
+            "summary": summary
+        }
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
+
+def get_file_content(repo_name, file_path):
+    try:
+        repo = user.get_repo(repo_name)
+        file = repo.get_contents(file_path)
+        content = file.decoded_content.decode("utf-8")
+        return {"status": "success", "filename": file_path, "content": content}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
+
+def list_repo_files(repo_name, path="", extension_filter=""):
+    try:
+        repo = user.get_repo(repo_name)
+        contents = repo.get_contents(path)
+        result = []
+
+        for item in contents:
+            if item.type == "file":
+                if extension_filter == "" or item.name.endswith(extension_filter):
+                    result.append({"path": item.path, "type": "file"})
+            elif item.type == "dir":
+                result.extend(list_repo_files(repo_name, path=item.path, extension_filter=extension_filter))
+
+        return result
+    except Exception as e:
+        return [{"error": str(e)}]
