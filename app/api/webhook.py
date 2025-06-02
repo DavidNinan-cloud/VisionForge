@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException,Request
 from app.api.schemas import GPTCommandRequest
-from app.services import github_operator, git_operator, code_generator
+from app.services import github_operator, git_operator
 import os
 
 router = APIRouter()
@@ -51,7 +51,6 @@ async def handle_gpt_command(command: GPTCommandRequest):
         )
         if file_data["status"] != "success":
             return file_data
-        # Placeholder for the removed code_generator.summarize_file_with_gpt
         return {
             "status": "error",
             "detail": "summarize_file_with_gpt functionality is not available."
