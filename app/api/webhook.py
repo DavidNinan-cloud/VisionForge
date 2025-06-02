@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException,Request
 from app.api.schemas import GPTCommandRequest
-from app.services import github_operator, git_operator
+from app.services import github_operator
 import os
 
 router = APIRouter()
@@ -17,11 +17,11 @@ async def handle_gpt_command(command: GPTCommandRequest):
     if not action:
         raise HTTPException(status_code=400, detail="Missing 'action' in payload.")
 
-    def use_repo_handler():
-        return git_operator.use_existing_repo(
-            repo_url=params["repo_url"],
-            local_path=os.path.join(BASE_PATH, params["folder_name"])
-        )
+    # def use_repo_handler():
+    #     return git_operator.use_existing_repo(
+    #         repo_url=params["repo_url"],
+    #         local_path=os.path.join(BASE_PATH, params["folder_name"])
+    #     )
 
     def create_branch_handler():
         return git_operator.create_branch(
