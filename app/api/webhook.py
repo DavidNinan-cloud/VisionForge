@@ -50,10 +50,8 @@ async def handle_gpt_command(command: GPTCommandRequest):
         ),
         "list_repos": lambda: github_operator.list_repos(),
     }
-
-
     handler = action_map.get(action)
     if handler:
-        return handler()
+        return handler(params)
 
     raise HTTPException(status_code=400, detail=f"Unknown action: {action}")
