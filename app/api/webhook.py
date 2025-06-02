@@ -50,6 +50,7 @@ async def handle_gpt_command(command: GPTCommandRequest):
         ),
         "list_repos": lambda: github_operator.list_repos(),
     }
+    print(f"Received params: {params}")
     handler = action_map.get(action)
     if handler:
         return handler(params)
