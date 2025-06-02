@@ -94,23 +94,49 @@ def commit_file_to_repo(repo_name, file_path, content, commit_message):
     except Exception as e:
         return format_error(e)
 
-
 def summarize_repo(repo_name):
     try:
-        repo = user.get_repo(repo_name)
-        files = repo.get_contents("")
+        # Get full file tree
+        tree_result = list_repo_files(repo_name)
+        if tree_result.get("status") != "success":
+            return tree_result
 
-        summary = []
-        for file in files:
-            if file.type == "file":
-                summary.append(f"📄 {file.name}")
-            elif file.type == "dir":
-                summary.append(f"📁 {file.name}/ (folder)")
+        tree = tree_result["data"]["tree"]
+
+        # Helper to flatten all file paths from the tree
+        def extract_file_paths(nodes):
+            paths = []
+            for node in nodes:
+                if node["type"] == "file":
+                    paths.append(node["path"])
+                elif node["type"] == "dir":
+                    paths.extend(extract_file_paths(node.get("children", [])))
+            return paths
+
+        all_file_paths = extract_file_paths(tree)
+
+        file_summaries = []
+        for path in all_file_paths:
+            content_result = get_file_content(repo_name, path)
+            if content_result.get("status") == "success":
+                content = content_result["data"]["content"]
+                file_summaries.append({
+                    "path": path,
+                    "content": content
+                })
+            else:
+                file_summaries.append({
+                    "path": path,
+                    "skipped": True,
+                    "reason": content_result.get("error", "Unknown error")
+                })
 
         return format_success({
-            "repo": repo.full_name,
-            "summary": summary
+            "repo": repo_name,
+            "structure": tree,
+            "files": file_summaries
         })
+
     except Exception as e:
         return format_error(e)
 
@@ -127,20 +153,33 @@ def get_file_content(repo_name, file_path):
     except Exception as e:
         return format_error(e)
 
-
 def list_repo_files(repo_name, path="", extension_filter=""):
     try:
         repo = user.get_repo(repo_name)
         contents = repo.get_contents(path)
-        result = []
 
-        for item in contents:
-            if item.type == "file":
-                if extension_filter == "" or item.name.endswith(extension_filter):
-                    result.append({"path": item.path, "type": "file"})
-            elif item.type == "dir":
-                result.extend(list_repo_files(repo_name, path=item.path, extension_filter=extension_filter))
+        def build_tree(items):
+            result = []
+            for item in items:
+                if item.type == "file":
+                    if extension_filter == "" or item.name.endswith(extension_filter):
+                        result.append({
+                            "name": item.name,
+                            "path": item.path,
+                            "type": "file"
+                        })
+                elif item.type == "dir":
+                    children = build_tree(repo.get_contents(item.path))
+                    result.append({
+                        "name": item.name,
+                        "path": item.path,
+                        "type": "dir",
+                        "children": children
+                    })
+            return result
 
-        return format_success({"files": result})
+        tree = build_tree(contents)
+        return format_success({"tree": tree})
+
     except Exception as e:
         return format_error(e)

@@ -7,6 +7,7 @@ router = APIRouter()
 
 
 @router.post("/webhook")
+
 async def handle_gpt_command(command: GPTCommandRequest):
     action = command.action
     params = command.params or {}
@@ -28,6 +29,7 @@ async def handle_gpt_command(command: GPTCommandRequest):
 
     # Dispatch dictionary (GitHub-only)
     action_map = {
+        "get_repo_url": lambda: github_operator.get_repo_url(params["repo_name"]),
         "create_repo": lambda: github_operator.create_repo(**params),
         "create_pull_request": lambda: github_operator.create_pull_request(**params),
         "validate_repo_url": lambda: {"valid": github_operator.validate_repo_url(**params)},
@@ -44,9 +46,9 @@ async def handle_gpt_command(command: GPTCommandRequest):
             file_path=params["file_path"]
         ),
         "list_repo_files": lambda: github_operator.list_repo_files(
-            repo_name=params["repo_name"],
-            extension_filter=params.get("filter", "")
+            repo_name=params["repo_name"]
         ),
+        "list_repos": lambda: github_operator.list_repos(),
     }
 
     handler = action_map.get(action)
